@@ -114,9 +114,7 @@ class HandleClient(threading.Thread):
                                 break
                 networker.join()
                 t2=time.time()
-                # Посмотрим, нужно ли...
-                t0=time.time()
-                logger.debug("Завершение обработчика. Время %d сек (%d - %d - %d сек)", int(t0-self.time),int(t1-self.time),int(t2-t1),int(t0-t2))
+                logger.debug("Завершение обработчика. Время %.2f сек", t2-self.time)
                 self.stop=1
 
         def ready_output(self, stock):
@@ -131,6 +129,7 @@ class Harvester(threading.Thread):
                 self.processer = processer
 
         def run(self):
+                t1=time.time()
                 threads={}
                 sockets=[]
                 connecters=[]
@@ -146,7 +145,6 @@ class Harvester(threading.Thread):
                         except:
                                 logger.error("[!] (%s) Сокет для склада %s не создался: %s", self.name, stock, sys.exc_value)
                 # Опросить
-                t1=time.time()
                 writers=[]
                 readers=[]
                 ready=[]
@@ -154,7 +152,6 @@ class Harvester(threading.Thread):
                 selectblocktime=0
                 while 1:
                         t2=time.time()-t1
-                        t3 = time.time()
                         #Соединиться, если ещё е совсеми попытались
                         if connecters:
                                 logger.debug("[=] (%s) Начинаем соединяться", self.name)
@@ -175,7 +172,7 @@ class Harvester(threading.Thread):
                                                                 pass
                                                 else:
                                                         writers.append(sock)
-                                logger.debug("[+] (%s) Открыли соединения: %d сек", self.name, time.time()-t3)
+                                logger.debug("[+] (%s) Открыли соединения: %.2f сек", self.name, time.time()-t1)
                         try:
                                 (r,w,e)=select.select(readers,writers,[],selectblocktime)
                         except:
@@ -183,7 +180,7 @@ class Harvester(threading.Thread):
                         # Отослать запросы
                         t3 = time.time()
                         if w:
-                                logger.debug("[=] (%s) Отсылаем запросы (ц: %d)", self.name, cnt)
+                                logger.debug("[=] (%s) Отсылаем запросы (цикл: %d)", self.name, cnt)
                                 for sock in w:
                                         sent=0
                                         f=threads[sock]
@@ -203,10 +200,10 @@ class Harvester(threading.Thread):
                                                         sock.close()
                                                 except:
                                                         pass
-                                logger.debug("[+] (%s) Запросы отослали: %d сек (ц: %d)", self.name, time.time()-t3, cnt)
+                                logger.debug("[+] (%s) Запросы отослали: %.2f сек (цикл: %d)", self.name, time.time()-t3, cnt)
                         # Принять данные
                         if r:
-                                logger.debug("[=] (%s) Начинаем читать (ц: %d)", self.name, cnt)
+                                logger.debug("[=] (%s) Начинаем читать (цикл: %d)", self.name, cnt)
                                 for sock in r:
                                         f=threads[sock]
 #                                       logger.debug("[D] Читаем слад %s" % f.stock)
